@@ -8,30 +8,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductDetailScreen(
-    navController: NavController,
-    productItem: ProductItem
-){
+fun ProductDetailScreen(productItem: ProductItem){
     var nicknameState by remember { mutableStateOf(TextFieldValue(productItem.nickname)) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Product Details") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
-        bottomBar = {}
-    ) { innerPadding ->
+    Scaffold {
+        innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)

@@ -8,5 +8,9 @@ data class ProductItem(
     val id: String,
     val product: Product,
     val nickname: String = "",
-    val isOnline: Boolean = true
+    val isOnline: Boolean = false,
+    val itemState: Boolean = false,
+    val sensorValue: String = "",
+    val errorCode: String = "",
+    val type: String = "",
 ) : Parcelable

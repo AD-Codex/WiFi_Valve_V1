@@ -1,6 +1,6 @@
 package com.example.wifi_valve_v01.ui
 
-import android.util.Log
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -12,66 +12,37 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.wifi_valve_v01.components.AppTopBar
 import com.example.wifi_valve_v01.components.BottomNavigationBar
-import com.example.wifi_valve_v01.data.ApiClient.authApiService
-import com.example.wifi_valve_v01.data.auth.AuthRepository
-import com.example.wifi_valve_v01.models.User
 import com.example.wifi_valve_v01.navigation.AppNavHost
 import com.example.wifi_valve_v01.navigation.BottomNavItem
 import com.example.wifi_valve_v01.navigation.Screens
 import com.example.wifi_valve_v01.ui.user.LoginDialog
-import com.example.wifi_valve_v01.utils.TokenManager
-import kotlinx.coroutines.launch
+import com.example.wifi_valve_v01.ui.user.UserViewModel
 
 
 @Composable
-fun MainScreen(navController: NavHostController) {
+fun MainScreen(
+    navController: NavHostController,
+    userViewModel: UserViewModel = viewModel()) {
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val context = LocalContext.current
-    val tokenManager = remember { TokenManager(context) }
-    val authRepository = remember { AuthRepository(authApiService, tokenManager) }
-    val coroutineScope = rememberCoroutineScope()
 
-    var isLoggedIn by remember { mutableStateOf(false) }
-    var currentUsername by remember { mutableStateOf<String?>(null) }
+    val user by userViewModel.user.collectAsState()
+    val isLoggedIn = user.id != -1
+    val currentUsername = user.username
     var showLoginDialog by remember { mutableStateOf(false) }
 
 
     // Auto logged in and Run ping test once on load
     LaunchedEffect(Unit) {
-        val token = tokenManager.getToken()
-        val user = tokenManager.getUser()
-
-        if (!token.isNullOrEmpty() && user.id != -1) {
-            try {
-                val response = authApiService.ping()
-                if (response.isSuccessful) {
-                    Log.d("AutoLogin", "Ping successful")
-                    isLoggedIn = true
-                    currentUsername = user.username
-                } else {
-                    Log.e("AutoLogin", "Ping failed: ${response.code()}")
-                    isLoggedIn = false
-                    currentUsername = null
-                }
-            } catch (e: Exception) {
-                Log.e("AutoLogin", "Ping exception", e)
-                isLoggedIn = false
-                currentUsername = null
-            }
-        } else {
-            Log.d("AutoLogin", "No token or invalid user")
-            isLoggedIn = false
-            currentUsername = null
-        }
+        userViewModel.checkLoginStatus()
     }
-
 
 
     val bottomNavItems = listOf(
@@ -104,23 +75,13 @@ fun MainScreen(navController: NavHostController) {
                 LoginDialog(
                     onDismiss = { showLoginDialog = false },
                     onLogin = { username, password, onResult ->
-                        coroutineScope.launch {
-                            val result = authRepository.login(username, password)
-                            isLoggedIn = result.isSuccess
-                            if (result.isSuccess) {
-                                val user = tokenManager.getUser()
-                                currentUsername = user.username
-                            }
-                            onResult(result.isSuccess)
-                        }
+                        userViewModel.login(username, password, onResult)
                     },
                     isLoggedIn = isLoggedIn,
                     currentUsername = currentUsername,
                     onLogout = {
-                        tokenManager.clearToken()
-                        tokenManager.clearUser()
-                        isLoggedIn = false
-                        currentUsername = null
+                        userViewModel.logout()
+                        userViewModel.refreshUser()
                     }
                 )
             }

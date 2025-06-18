@@ -11,45 +11,31 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.wifi_valve_v01.models.Product
 import androidx.compose.ui.unit.dp
-import com.example.wifi_valve_v01.R
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberImagePainter
 
 
 @Composable
 fun AddProductDialog(
     onDismiss: () -> Unit,
-    onAddProduct: (Product) -> Unit
+    onAddProduct: (Product) -> Unit,
+    productViewModel: ProductViewModel = viewModel()
 ) {
-    val availableProducts = remember {
-        listOf(
-            Product(
-                productId = "v001",
-                name = "WiFi valve v1",
-                description = "Basic motorize valve control over WiFi",
-                imageId = R.drawable.v001
-            ),
-            Product(
-                productId = "v002",
-                name = "WiFi valve v2",
-                description = "Motorize valve and Soil moisture sensors control over WiFi",
-                imageId = R.drawable.v002
-            ),
-            Product(
-                productId = "C001",
-                name = "Controller Unit",
-                description = "Universal Controller unit",
-                imageId = R.drawable.c001)
-        )
+
+    // Fetch products when the composable is launched
+    LaunchedEffect(Unit) {
+        productViewModel.fetchProducts() // Fetch the products
     }
+
+    val products by productViewModel.products.collectAsState()
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -90,7 +76,7 @@ fun AddProductDialog(
                     modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(availableProducts) { product ->
+                    items(products) { product ->
                         ProductItem(
                             product = product,
                             onAddClick = { onAddProduct(product)}
@@ -116,16 +102,16 @@ private fun ProductItem(
         onClick = onAddClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(horizontal = 16.dp, 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource( id = product.imageId),
+                painter = rememberImagePainter(product.fullImageUrl), // Load image from URL
                 contentDescription = product.name,
                 modifier = Modifier
                     .size(80.dp)

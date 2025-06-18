@@ -2,17 +2,15 @@ package com.example.wifi_valve_v01.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.example.wifi_valve_v01.models.ProductItem
 import com.example.wifi_valve_v01.ui.about.AboutScreen
 import com.example.wifi_valve_v01.ui.home.HomeScreen
 import com.example.wifi_valve_v01.ui.user.UserScreen
 import com.example.wifi_valve_v01.ui.details.ProductDetailScreen
-
+import com.example.wifi_valve_v01.ui.details.ValveDetailScreen
 
 
 @Composable
@@ -40,7 +38,15 @@ fun AppNavHost(
                 ?.get<ProductItem>("productItem")
 
             if (productItem != null) {
-                ProductDetailScreen(navController = navController, productItem = productItem)
+                ProductDetailScreen(productItem = productItem)
+            }
+        }
+        composable(Screens.ValveDetail.route) { backStackEntry ->
+            val productItem = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<ProductItem>("productItem")
+            if (productItem != null) {
+                ValveDetailScreen(productItem = productItem)
             }
         }
 

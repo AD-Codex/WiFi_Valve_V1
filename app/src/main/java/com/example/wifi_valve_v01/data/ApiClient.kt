@@ -2,6 +2,8 @@ package com.example.wifi_valve_v01.data
 
 
 import com.example.wifi_valve_v01.data.auth.AuthApiService
+import com.example.wifi_valve_v01.data.product.ProductApiService
+import com.example.wifi_valve_v01.data.productItem.ProductItemApiService
 import com.example.wifi_valve_v01.data.user.UserApiService
 import com.example.wifi_valve_v01.utils.Constants
 import okhttp3.OkHttpClient
@@ -33,6 +35,14 @@ object ApiClient {
 
     val userApiService: UserApiService by lazy {
         retrofit.create(UserApiService::class.java)
+    }
+
+    val productApiService: ProductApiService by lazy {
+        retrofit.create(ProductApiService::class.java)
+    }
+
+    val productItemApiService: ProductItemApiService by lazy {
+        retrofit.create(ProductItemApiService::class.java)
     }
 
 }

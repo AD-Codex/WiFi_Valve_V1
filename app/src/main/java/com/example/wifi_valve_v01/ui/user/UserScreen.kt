@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.wifi_valve_v01.data.ApiClient
 import com.example.wifi_valve_v01.data.user.UpdateUserRequest
 import com.example.wifi_valve_v01.data.user.UserRepository
@@ -21,18 +22,26 @@ import com.example.wifi_valve_v01.utils.TokenManager
 import kotlinx.coroutines.launch
 
 @Composable
-fun UserScreen() {
+fun UserScreen(userViewModel: UserViewModel = viewModel()) {
 
-    val context = LocalContext.current
-    val tokenManager = remember { TokenManager(context) }
-    val user = remember { mutableStateOf(tokenManager.getUser()) }
+    LaunchedEffect(Unit) {
+        userViewModel.refreshUser()
+    }
+
+    val user by userViewModel.user.collectAsState()
 
     // Editable fields
-    var phoneNumberState by remember { mutableStateOf(TextFieldValue(user.value.phone)) }
-    var emailState by remember { mutableStateOf(TextFieldValue(user.value.email)) }
+    var phoneNumberState by remember { mutableStateOf(TextFieldValue(user.phone)) }
+    var emailState by remember { mutableStateOf(TextFieldValue(user.email)) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(user) {
+//        userViewModel.refreshUser()
+        phoneNumberState = TextFieldValue(user.phone)
+        emailState = TextFieldValue(user.email)
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -57,7 +66,7 @@ fun UserScreen() {
 
             // User Name (read-only)
             OutlinedTextField(
-                value = user.value.username,
+                value = user.username,
                 onValueChange = {},
                 label = { Text("Name") },
                 modifier = Modifier.fillMaxWidth(),
@@ -83,31 +92,18 @@ fun UserScreen() {
             // Update Button
             Button(
                 onClick = {
-                    scope.launch {
-                        val repository = UserRepository(ApiClient.userApiService)
-                        val request = UpdateUserRequest(
-                            id = user.value.id,
+                    if (user.id != -1) {
+                        userViewModel.updateUser(
                             email = emailState.text,
                             phone = phoneNumberState.text
-                        )
-
-                        val result = repository.updateUser(request.id, request.email, request.phone)
-
-                        if (result.isSuccess) {
-                            // Update TokenManager and UI state
-                            val updatedUser = user.value.copy(
-                                email = emailState.text,
-                                phone = phoneNumberState.text
-                            )
-                            tokenManager.saveUser(updatedUser)
-                            user.value = updatedUser
-
-                            snackbarHostState.showSnackbar("User details updated successfully")
-                        } else {
-                            snackbarHostState.showSnackbar("Failed to update user details")
+                        ) { success ->
+                            scope.launch {
+                                val message = if (success) "User updated" else "Failed to update"
+                                snackbarHostState.showSnackbar(message)
+                            }
                         }
-
                     }
+
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
